@@ -1,5 +1,5 @@
-import { generateAccessToken, generateRefreshToken } from '@src/lib/jwt';
-import { loginUser, registerUser } from '@src/services/auth.services';
+import { generateAccessToken, generateRefreshToken } from '../lib/jwt';
+import { loginUser, registerUser } from '../services/auth.services';
 import { Request, Response } from 'express';
 
 // signup

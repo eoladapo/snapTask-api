@@ -1,5 +1,5 @@
-import { IAuth, ILogin } from '@src/common/interface/user-interface';
-import User from '@src/models/user.model';
+import { IAuth, ILogin } from '../common/interface/user-interface';
+import User from '../models/user.model';
 import { omit } from 'lodash';
 import { Types } from 'mongoose';
 

@@ -1,4 +1,4 @@
-import { IUser } from '@src/common/interface/user-interface';
+import { IUser } from '../common/interface/user-interface';
 import { Schema, model } from 'mongoose';
 import bcrypt from 'bcryptjs';
 

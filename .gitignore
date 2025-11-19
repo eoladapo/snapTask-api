@@ -1,5 +1,6 @@
 node_modules
 .env
+dist
 
 # Documentation files
 AI_TASK_ACTIONS_EDGE_CASES.md

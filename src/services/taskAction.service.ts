@@ -1,4 +1,4 @@
-import { Task, ITask } from '@src/models/task.model';
+import { Task, ITask } from '../models/task.model';
 import { Types } from 'mongoose';
 
 /**

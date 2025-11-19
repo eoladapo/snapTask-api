@@ -7,8 +7,8 @@ import {
   markAsInProgress,
   markAsPending,
   update,
-} from '@src/controllers/task.controller';
-import { authenticate } from '@src/middleware/authenticate';
+} from '../controllers/task.controller';
+import { authenticate } from '../middleware/authenticate';
 import { Router } from 'express';
 
 const router: Router = Router();

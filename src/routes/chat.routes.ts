@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { authenticate } from '@src/middleware/authenticate';
-import { checkGeminiAvailable } from '@src/middleware/checkGemini';
-import { sendMessage, getWelcomeMessage } from '@src/controllers/chat.controller';
+import { authenticate } from '../middleware/authenticate';
+import { checkGeminiAvailable } from '../middleware/checkGemini';
+import { sendMessage, getWelcomeMessage } from '../controllers/chat.controller';
 
 const router: Router = Router();
 

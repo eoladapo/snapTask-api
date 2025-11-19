@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { generateResponse, isGeminiAvailable, TaskContext } from '@src/services/gemini.service';
-import { Task } from '@src/models/task.model';
+import { generateResponse, isGeminiAvailable, TaskContext } from '../services/gemini.service';
+import { Task } from '../models/task.model';
 
 interface ChatRequest {
   message: string;

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { isGeminiAvailable } from '@src/services/gemini.service';
+import { isGeminiAvailable } from '../services/gemini.service';
 
 /**
  * Middleware to check if Gemini AI service is available

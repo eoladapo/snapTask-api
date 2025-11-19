@@ -1,4 +1,4 @@
-import { ITask } from '@src/models/task.model';
+import { ITask } from '../models/task.model';
 import {
   completeTask,
   create,
@@ -8,7 +8,7 @@ import {
   inProgressTask,
   pendingTask,
   updateTask,
-} from '@src/services/task.service';
+} from '../services/task.service';
 import { Request, Response } from 'express';
 
 export const createTask = async (req: Request, res: Response) => {

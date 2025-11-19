@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import config from '@src/config';
-import { ITask } from '@src/models/task.model';
+import config from '../config';
+import { ITask } from '../models/task.model';
 import { taskActionService, TaskActionResult } from './taskAction.service';
 
 let genAI: GoogleGenerativeAI | null = null;

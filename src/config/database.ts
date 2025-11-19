@@ -1,4 +1,4 @@
-import config from '@src/config';
+import config from './index';
 import mongoose from 'mongoose';
 
 export const connectDB = async () => {

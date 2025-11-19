@@ -1,11 +1,11 @@
 import express from 'express';
 import cors from 'cors'
 import { connectDB } from './config/database';
-import router from '@src/routes/auth.routes';
-import { taskRouter } from '@src/routes/task.routes';
-import { chatRouter } from '@src/routes/chat.routes';
-import config from '@src/config';
-import { initializeGemini } from '@src/services/gemini.service';
+import router from './routes/auth.routes';
+import { taskRouter } from './routes/task.routes';
+import { chatRouter } from './routes/chat.routes';
+import config from './config';
+import { initializeGemini } from './services/gemini.service';
 
 
 const app = express();
