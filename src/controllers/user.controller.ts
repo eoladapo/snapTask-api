@@ -107,11 +107,14 @@ export const getStatistics = async (req: Request, res: Response) => {
     });
     const yearlyCompleted = yearlyTasks.filter((t) => t.status === 'completed').length;
 
-    // Daily completion trend (last 7 days)
+    // Daily completion trend (current week: Mon-Sun)
     const dailyTrend = [];
-    for (let i = 6; i >= 0; i--) {
+    const currentDayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const daysFromMonday = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1; // Adjust so Monday = 0
+    
+    for (let i = 0; i < 7; i++) {
       const date = new Date(now);
-      date.setDate(now.getDate() - i);
+      date.setDate(now.getDate() - daysFromMonday + i);
       date.setHours(0, 0, 0, 0);
       
       const nextDate = new Date(date);
