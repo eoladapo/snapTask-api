@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import User from '../models/user.model';
 import { Task } from '../models/task.model';
+import { Category } from '../models/category.model';
 
 // Get user profile
 export const getProfile = async (req: Request, res: Response) => {
@@ -183,6 +184,52 @@ export const getStatistics = async (req: Request, res: Response) => {
       });
     }
 
+    // Get all user categories
+    const categories = await Category.find({ user: userId });
+
+    // Calculate category breakdown
+    const categoryBreakdown = await Promise.all(
+      categories.map(async (category) => {
+        const categoryId = category._id?.toString();
+        const categoryTasks = tasks.filter(
+          (t) => t.category && t.category.toString() === categoryId
+        );
+        const categoryCompleted = categoryTasks.filter((t) => t.status === 'completed').length;
+        const categoryTotal = categoryTasks.length;
+        const categoryCompletionRate = categoryTotal > 0 ? Math.round((categoryCompleted / categoryTotal) * 100) : 0;
+
+        return {
+          categoryId: categoryId,
+          categoryName: category.name,
+          categoryColor: category.color,
+          totalTasks: categoryTotal,
+          completedTasks: categoryCompleted,
+          pendingTasks: categoryTasks.filter((t) => t.status === 'pending').length,
+          inProgressTasks: categoryTasks.filter((t) => t.status === 'in-progress').length,
+          completionRate: categoryCompletionRate,
+        };
+      })
+    );
+
+    // Add uncategorized tasks
+    const uncategorizedTasks = tasks.filter((t) => !t.category);
+    const uncategorizedCompleted = uncategorizedTasks.filter((t) => t.status === 'completed').length;
+    const uncategorizedTotal = uncategorizedTasks.length;
+    const uncategorizedCompletionRate = uncategorizedTotal > 0 ? Math.round((uncategorizedCompleted / uncategorizedTotal) * 100) : 0;
+
+    if (uncategorizedTotal > 0) {
+      categoryBreakdown.push({
+        categoryId: undefined,
+        categoryName: 'Uncategorized',
+        categoryColor: '#9ca3af',
+        totalTasks: uncategorizedTotal,
+        completedTasks: uncategorizedCompleted,
+        pendingTasks: uncategorizedTasks.filter((t) => t.status === 'pending').length,
+        inProgressTasks: uncategorizedTasks.filter((t) => t.status === 'in-progress').length,
+        completionRate: uncategorizedCompletionRate,
+      });
+    }
+
     const statistics = {
       overview: {
         totalTasks,
@@ -213,6 +260,7 @@ export const getStatistics = async (req: Request, res: Response) => {
         weekly: weeklyTrend,
         monthly: monthlyTrend,
       },
+      categoryBreakdown,
     };
 
     res.status(200).json({ message: 'Statistics fetched successfully', statistics });
