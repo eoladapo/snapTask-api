@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import config from '../config';
 import { ITask } from '../models/task.model';
 import { taskActionService, TaskActionResult } from './taskAction.service';
+import { categoryActionService, CategoryActionResult } from './categoryAction.service';
 
 let genAI: GoogleGenerativeAI | null = null;
 let model: any = null;
@@ -102,6 +103,24 @@ const functionDeclarations = [
       required: ['taskIdentifier', 'confirmed'],
     },
   },
+  {
+    name: 'createCategory',
+    description: 'Creates a new category for organizing tasks',
+    parameters: {
+      type: 'OBJECT' as const,
+      properties: {
+        name: {
+          type: 'STRING' as const,
+          description: 'The name of the category (required, max 50 characters)',
+        },
+        color: {
+          type: 'STRING' as const,
+          description: 'The color for the category in hex format (optional, defaults to #6366f1). Example: #FF5733',
+        },
+      },
+      required: ['name'],
+    },
+  },
 ];
 
 // Tools configuration for Gemini
@@ -173,9 +192,11 @@ ${formatTaskList(inProgressTasks, 'in-progress')}
 COMPLETED TASKS:
 ${formatTaskList(completedTasks, 'completed')}
 
-=== TASK ACTION CAPABILITIES ===
+=== TASK AND CATEGORY ACTION CAPABILITIES ===
 
-You have access to four functions to manage tasks:
+You have access to five functions to manage tasks and categories:
+
+TASK FUNCTIONS:
 
 1. createTask(title, description?, status?)
    - Use when: User wants to add, create, or make a new task
@@ -200,6 +221,15 @@ You have access to four functions to manage tasks:
    - IMPORTANT: Always set confirmed=false on first call to request confirmation
    - Only set confirmed=true after user explicitly confirms (handled automatically by system)
 
+CATEGORY FUNCTIONS:
+
+5. createCategory(name, color?)
+   - Use when: User wants to create, add, or make a new category for organizing tasks
+   - Examples: "create a category called Work", "add a new category for Personal tasks", "make a category named Shopping"
+   - Required: name (extract from user message, max 50 characters)
+   - Optional: color (hex color code like #FF5733, defaults to #6366f1 if not provided)
+   - Common phrases: "create/add/make a category", "new category for", "organize tasks by"
+
 === TASK IDENTIFICATION GUIDELINES ===
 
 When identifying tasks from user messages:
@@ -214,7 +244,7 @@ When identifying tasks from user messages:
 
 Recognize these common patterns:
 
-CREATE patterns:
+TASK CREATE patterns:
 - "create/add/make a task [to/for/called] [title]"
 - "new task: [title]"
 - "remind me to [title]"
@@ -227,19 +257,27 @@ STATUS UPDATE patterns:
 - "[task] is done/finished"
 - "I completed [task]"
 
-UPDATE patterns:
+TASK UPDATE patterns:
 - "rename/change [task] to [new title]"
 - "update [task] description to [new description]"
 - "edit [task]"
 
-DELETE patterns:
+TASK DELETE patterns:
 - "delete/remove [task]"
 - "get rid of [task]"
 - "I don't need [task] anymore"
 
+CATEGORY CREATE patterns:
+- "create/add/make a category [called/named/for] [name]"
+- "new category: [name]"
+- "add category [name]"
+- "I want to organize tasks by [name]"
+- "create a [name] category"
+
 MULTI-STEP patterns:
 - "create a task called [title] and mark it as in progress" → call createTask with status='in-progress'
 - "complete [task] and create a new one for [title]" → call updateTaskStatus then createTask
+- "create a category called [name] with color [color]" → call createCategory with name and color
 
 === HANDLING AMBIGUOUS REQUESTS ===
 
@@ -355,7 +393,7 @@ const executeFunctionCalls = async (
 
   for (const functionCall of functionCalls) {
     const { name, args } = functionCall;
-    let result: TaskActionResult;
+    let result: TaskActionResult | CategoryActionResult;
 
     try {
       // Validate user ID before executing any function
@@ -422,22 +460,29 @@ const executeFunctionCalls = async (
           );
           break;
 
+        case 'createCategory':
+          result = await categoryActionService.createCategory(userId, {
+            name: args.name,
+            color: args.color,
+          });
+          break;
+
         default:
           result = {
             success: false,
-            message: `Unknown function: ${name}. Available functions are: createTask, updateTaskStatus, updateTask, deleteTask.`,
+            message: `Unknown function: ${name}. Available functions are: createTask, updateTaskStatus, updateTask, deleteTask, createCategory.`,
             error: 'UNKNOWN_FUNCTION' as any,
             retryable: false,
           };
       }
 
-      // Store disambiguation context if needed
-      if (result.requiresDisambiguation && result.disambiguationContext) {
+      // Store disambiguation context if needed (only for task actions)
+      if ('requiresDisambiguation' in result && result.requiresDisambiguation && result.disambiguationContext) {
         newConversationContext = result.disambiguationContext;
       }
 
-      // Store confirmation context if needed
-      if (result.requiresConfirmation && result.confirmationContext) {
+      // Store confirmation context if needed (only for task actions)
+      if ('requiresConfirmation' in result && result.requiresConfirmation && result.confirmationContext) {
         newConversationContext = result.confirmationContext;
       }
 
@@ -446,13 +491,15 @@ const executeFunctionCalls = async (
         response: {
           success: result.success,
           message: result.message,
-          task: result.task,
-          tasks: result.tasks,
+          task: 'task' in result ? result.task : undefined,
+          category: 'category' in result ? result.category : undefined,
+          tasks: 'tasks' in result ? result.tasks : undefined,
+          categories: 'categories' in result ? result.categories : undefined,
           error: result.error,
           errorDetails: result.errorDetails,
           retryable: result.retryable,
-          requiresDisambiguation: result.requiresDisambiguation,
-          requiresConfirmation: result.requiresConfirmation,
+          requiresDisambiguation: 'requiresDisambiguation' in result ? result.requiresDisambiguation : undefined,
+          requiresConfirmation: 'requiresConfirmation' in result ? result.requiresConfirmation : undefined,
         },
       });
     } catch (error: any) {
