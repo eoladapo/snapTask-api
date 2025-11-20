@@ -162,6 +162,8 @@ export const getStatistics = async (req: Request, res: Response) => {
 
     // Monthly completion trend (last 6 months)
     const monthlyTrend = [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
     for (let i = 5; i >= 0; i--) {
       const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
@@ -175,7 +177,7 @@ export const getStatistics = async (req: Request, res: Response) => {
       const monthCompleted = monthTasks.filter((t) => t.status === 'completed').length;
 
       monthlyTrend.push({
-        month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
+        month: monthNames[monthStart.getMonth()],
         completed: monthCompleted,
         total: monthTasks.length,
       });
