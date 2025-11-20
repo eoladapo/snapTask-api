@@ -17,14 +17,14 @@ app.use(express.urlencoded({ extended: true }));
 
 
 app.use(cors({
-  origin: ["http://localhost:5173", "https://snap-task-ui.vercel.app"],
+  origin: ["http://localhost:5173", "https://snap-task-ui.vercel.app", "https://snaptask-ui.onrender.com"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization", "x-retry-count"]
 }));
 
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin",  "http://localhost:5173");
+  res.header("Access-Control-Allow-Origin",  "https://snaptask-ui.onrender.com");
   res.header("Access-Control-Allow-Credentials", "true");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-retry-count");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE");
