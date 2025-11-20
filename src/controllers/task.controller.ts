@@ -9,6 +9,7 @@ import {
   pendingTask,
   updateTask,
 } from '../services/task.service';
+import { getCategoryById } from '../services/category.service';
 import { Request, Response } from 'express';
 
 // Helper function to extract user ID from task.user (handles both populated and non-populated)
@@ -19,9 +20,23 @@ const getTaskUserId = (taskUser: any): string => {
 export const createTask = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const { title, description, status } = req.body;
+    const { title, description, status, category } = req.body;
 
-    const newTask = await create({ title, description, status, user });
+    // Validate category ownership if category is provided
+    if (category) {
+      const categoryDoc = await getCategoryById(category);
+      
+      if (!categoryDoc) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+      
+      // Verify category belongs to the user
+      if (categoryDoc.user.toString() !== user.toString()) {
+        return res.status(403).json({ message: 'Forbidden: You do not have access to this category' });
+      }
+    }
+
+    const newTask = await create({ title, description, status, category, user });
 
     res.status(201).json({ message: 'Task created successfully', task: newTask });
   } catch (error) {
@@ -40,7 +55,24 @@ export const getAll = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const tasks = await getAllTasks(user);
+    // Get category filter from query parameter
+    const categoryId = req.query.category as string | undefined;
+
+    // Validate category ownership if category filter is provided
+    if (categoryId && categoryId !== 'null') {
+      const categoryDoc = await getCategoryById(categoryId);
+      
+      if (!categoryDoc) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+      
+      // Verify category belongs to the user
+      if (categoryDoc.user.toString() !== user.toString()) {
+        return res.status(403).json({ message: 'Forbidden: You do not have access to this category' });
+      }
+    }
+
+    const tasks = await getAllTasks(user, categoryId);
     if (!tasks || tasks.length === 0) {
       return res.status(404).json({ message: 'No tasks found' });
     }
@@ -85,9 +117,9 @@ export const update = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
-    const { title, description, status } = req.body as ITask;
+    const { title, description, status, category } = req.body as ITask;
 
-    console.log('Update task request:', { id, title, description, status, user: user?._id });
+    console.log('Update task request:', { id, title, description, status, category, user: user?._id });
 
     if (!user) {
       console.log('Update task - Unauthorized: No user');
@@ -106,9 +138,23 @@ export const update = async (req: Request, res: Response) => {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
     }
 
+    // Validate new category ownership if category is being changed
+    if (category !== undefined && category !== null) {
+      const categoryDoc = await getCategoryById(category.toString());
+      
+      if (!categoryDoc) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+      
+      // Verify category belongs to the user
+      if (categoryDoc.user.toString() !== user.toString()) {
+        return res.status(403).json({ message: 'Forbidden: You do not have access to this category' });
+      }
+    }
+
     console.log('Update task - Found task:', task);
 
-    const updatedTask = await updateTask(id, { title, description, status } as ITask);
+    const updatedTask = await updateTask(id, { title, description, status, category } as ITask);
 
     console.log('Update task - Updated task:', updatedTask);
 

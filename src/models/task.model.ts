@@ -5,6 +5,8 @@ export interface ITask {
   description: string;
   status: string;
   user: Schema.Types.ObjectId;
+  category?: Schema.Types.ObjectId;
+  dueDate?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -28,6 +30,14 @@ const taskSchema = new Schema<ITask>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+    },
+    category: {
+      type: Schema.Types.ObjectId,
+      ref: 'Category',
+      default: null,
+    },
+    dueDate: {
+      type: Date,
     },
   },
   {

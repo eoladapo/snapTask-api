@@ -5,18 +5,33 @@ export const create = async (task: ITask) => {
   return result;
 };
 
-export const getAllTasks = async (userId: string) => {
-  const result = await Task.find({ user: userId }).populate('user');
+export const getAllTasks = async (userId: string, categoryId?: string) => {
+  const query: any = { user: userId };
+  
+  if (categoryId !== undefined) {
+    // Support filtering by category, including null for uncategorized tasks
+    query.category = categoryId === 'null' ? null : categoryId;
+  }
+  
+  const result = await Task.find(query).populate('user').populate('category');
   return result;
 };
 
 export const getTask = async (id: string) => {
-  const result = await Task.findById(id).populate('user');
+  const result = await Task.findById(id).populate('user').populate('category');
   return result;
 };
 
 export const updateTask = async (id: string, task: ITask) => {
-  const result = await Task.findByIdAndUpdate(id, task, { new: true });
+  const result = await Task.findByIdAndUpdate(id, task, { new: true }).populate('category');
+  return result;
+};
+
+export const getCategoryTasks = async (userId: string, categoryId: string) => {
+  const query: any = { user: userId };
+  query.category = categoryId === 'null' ? null : categoryId;
+  
+  const result = await Task.find(query).populate('user').populate('category');
   return result;
 };
 

@@ -5,6 +5,7 @@ import router from './routes/auth.routes';
 import { taskRouter } from './routes/task.routes';
 import { chatRouter } from './routes/chat.routes';
 import { userRouter } from './routes/user.routes';
+import { categoryRouter } from './routes/category.routes';
 import config from './config';
 import { initializeGemini } from './services/gemini.service';
 
@@ -24,7 +25,7 @@ app.use(cors({
 }));
 
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin",  "https://snaptask-geo.onrender.com");
+  res.header("Access-Control-Allow-Origin",  "http://localhost:5173");
   res.header("Access-Control-Allow-Credentials", "true");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-retry-count");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE");
@@ -63,6 +64,7 @@ app.use('/api/auth', router);
 app.use('/api/task', taskRouter);
 app.use('/api/chat', chatRouter);
 app.use('/api/user', userRouter);
+app.use('/api/categories', categoryRouter);
 
 app.listen(config.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);
