@@ -22,7 +22,7 @@ function sanitizeObject(obj: any, replaceWith: string = '_'): any {
   const sanitized: any = {};
   
   for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       // Check if key contains $ or .
       if (key.includes('$') || key.includes('.')) {
         // Replace $ and . with the replacement character

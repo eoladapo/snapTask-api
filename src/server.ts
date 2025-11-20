@@ -17,6 +17,10 @@ import { initializeGemini } from './services/gemini.service';
 
 const app = express();
 
+// Trust proxy - Required for Render and other reverse proxies
+// This allows express-rate-limit to correctly identify users by IP
+app.set('trust proxy', 1);
+
 // Validate required environment variables at startup
 const requiredEnvVars = [
   'ACCESS_TOKEN_SECRET',
