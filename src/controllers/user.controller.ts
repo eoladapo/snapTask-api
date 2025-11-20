@@ -46,10 +46,17 @@ export const getProfile = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user;
-    const { username, bio, profilePicture } = req.body;
+    const { username, bio, profilePicture, email } = req.body;
 
     if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Prevent email updates
+    if (email !== undefined) {
+      return res.status(400).json({ 
+        message: 'Email cannot be updated. Please contact support if you need to change your email.' 
+      });
     }
 
     const updateData: any = {};

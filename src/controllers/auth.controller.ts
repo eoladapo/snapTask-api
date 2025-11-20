@@ -10,6 +10,13 @@ export const signup = async (req: Request, res: Response) => {
     if (!username || !email || !password)
       return res.status(400).json({ message: 'Please provide all required fields' });
 
+    // Validate Gmail only
+    if (!email.toLowerCase().endsWith('@gmail.com')) {
+      return res.status(400).json({ 
+        message: 'Only Gmail addresses are allowed for registration' 
+      });
+    }
+
     const user = await registerUser({ username, email, password });
 
     // generate Token
