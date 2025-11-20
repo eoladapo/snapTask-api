@@ -1,8 +1,8 @@
 import express from 'express';
 import cors from 'cors'
 import helmet from 'helmet';
-import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
+import { mongoSanitize } from './middleware/mongoSanitize';
 import { connectDB } from './config/database';
 import router from './routes/auth.routes';
 import { taskRouter } from './routes/task.routes';
