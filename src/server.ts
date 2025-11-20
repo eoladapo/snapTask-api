@@ -10,6 +10,7 @@ import { chatRouter } from './routes/chat.routes';
 import { userRouter } from './routes/user.routes';
 import { categoryRouter } from './routes/category.routes';
 import { notificationRouter } from './routes/notification.routes';
+import cronRouter from './routes/cron.routes';
 import config from './config';
 import { initializeGemini } from './services/gemini.service';
 
@@ -139,6 +140,7 @@ app.use('/api/chat', chatRouter);
 app.use('/api/user', userRouter);
 app.use('/api/categories', categoryRouter);
 app.use('/api/notifications', notificationRouter);
+app.use('/api/cron', cronRouter);
 
 app.listen(config.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);

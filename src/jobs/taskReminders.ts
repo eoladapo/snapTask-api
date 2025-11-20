@@ -27,6 +27,9 @@ async function runTaskRemindersJob(): Promise<void> {
   }
 }
 
+// Export for use by cron routes
+export { runTaskRemindersJob as runTaskReminders };
+
 // Execute the job if run directly
 if (require.main === module) {
   // Import database connection

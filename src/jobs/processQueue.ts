@@ -27,6 +27,9 @@ async function runProcessQueueJob(): Promise<void> {
   }
 }
 
+// Export for use by cron routes
+export { runProcessQueueJob as runProcessQueue };
+
 // Execute the job if run directly
 if (require.main === module) {
   // Import database connection
