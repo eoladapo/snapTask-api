@@ -27,10 +27,16 @@ export const createTask = async (req: Request, res: Response) => {
   }
 };
 
-export const getAll = async (_req: Request, res: Response) => {
+export const getAll = async (req: Request, res: Response) => {
   try {
-    const tasks = await getAllTasks();
-    if (!tasks) {
+    const user = (req as any).user;
+
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const tasks = await getAllTasks(user);
+    if (!tasks || tasks.length === 0) {
       return res.status(404).json({ message: 'No tasks found' });
     }
     res.status(200).json({ message: 'Tasks fetched successfully', tasks });
@@ -55,6 +61,11 @@ export const getTaskById = async (req: Request, res: Response) => {
 
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Verify task belongs to the user
+    if (task.user.toString() !== user.toString()) {
+      return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
     }
 
     res.status(200).json({ message: 'Task fetched successfully', task });
@@ -83,6 +94,11 @@ export const update = async (req: Request, res: Response) => {
     if (!task) {
       console.log('Update task - Task not found:', id);
       return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Verify task belongs to the user
+    if (task.user.toString() !== user.toString()) {
+      return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
     }
 
     console.log('Update task - Found task:', task);
@@ -115,6 +131,11 @@ export const deleteTask = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
+    // Verify task belongs to the user
+    if (task.user.toString() !== user.toString()) {
+      return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
+    }
+
     await deleteTasks(id);
 
     res.status(200).json({ message: 'Task deleted successfully' });
@@ -138,6 +159,11 @@ export const markAsCompleted = async (req: Request, res: Response) => {
 
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Verify task belongs to the user
+    if (task.user.toString() !== user.toString()) {
+      return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
     }
 
     const complete = await completeTask(id);
@@ -165,6 +191,11 @@ export const markAsInProgress = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
+    // Verify task belongs to the user
+    if (task.user.toString() !== user.toString()) {
+      return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
+    }
+
     const inProgress = await inProgressTask(id);
 
     res.status(200).json({ message: 'Task marked as in progress successfully', task: inProgress });
@@ -188,6 +219,11 @@ export const markAsPending = async (req: Request, res: Response) => {
 
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Verify task belongs to the user
+    if (task.user.toString() !== user.toString()) {
+      return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
     }
 
     const pending = await pendingTask(id);

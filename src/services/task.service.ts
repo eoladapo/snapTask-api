@@ -5,8 +5,8 @@ export const create = async (task: ITask) => {
   return result;
 };
 
-export const getAllTasks = async () => {
-  const result = await Task.find().populate('user');
+export const getAllTasks = async (userId: string) => {
+  const result = await Task.find({ user: userId }).populate('user');
   return result;
 };
 
