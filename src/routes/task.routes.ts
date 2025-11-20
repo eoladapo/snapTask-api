@@ -10,10 +10,21 @@ import {
 } from '../controllers/task.controller';
 import { authenticate } from '../middleware/authenticate';
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 
 const router: Router = Router();
 
-router.post('/', authenticate, createTask);
+// Rate limiter for task creation - prevents abuse
+const taskCreationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 50, // 50 task creations per hour per user
+  keyGenerator: (req) => (req as any).user?.toString() || 'anonymous',
+  message: 'Too many tasks created. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.post('/', authenticate, taskCreationLimiter, createTask);
 router.get('/', authenticate, getAll);
 router.get('/:id', authenticate, getTaskById);
 router.put('/:id', authenticate, update);

@@ -30,6 +30,18 @@ export const create = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Color must be a valid hex code (e.g., #FF5733)' });
     }
 
+    // Check database-level limit: max 50 categories per user
+    const MAX_CATEGORIES_PER_USER = 50;
+    const categoryCount = await getAllCategories(user.toString());
+    
+    if (categoryCount.length >= MAX_CATEGORIES_PER_USER) {
+      return res.status(429).json({ 
+        message: `Maximum category limit reached (${MAX_CATEGORIES_PER_USER}). Please delete some categories before creating new ones.`,
+        currentCount: categoryCount.length,
+        maxAllowed: MAX_CATEGORIES_PER_USER
+      });
+    }
+
     // Create category
     const category = await createCategory(user, name.trim(), color || '#6366f1');
 

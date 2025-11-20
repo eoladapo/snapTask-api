@@ -10,6 +10,7 @@ import {
   updateTask,
 } from '../services/task.service';
 import { getCategoryById } from '../services/category.service';
+import { notificationSchedulerService } from '../services/notificationScheduler.service';
 import { Request, Response } from 'express';
 
 // Helper function to extract user ID from task.user (handles both populated and non-populated)
@@ -154,9 +155,22 @@ export const update = async (req: Request, res: Response) => {
 
     console.log('Update task - Found task:', task);
 
+    // Store old status for notification
+    const oldStatus = task.status;
+
     const updatedTask = await updateTask(id, { title, description, status, category } as ITask);
 
     console.log('Update task - Updated task:', updatedTask);
+
+    // Send notification if status changed to in-progress or completed
+    if (status && status !== oldStatus && (status === 'in-progress' || status === 'completed')) {
+      // Schedule notification asynchronously (don't wait for it)
+      notificationSchedulerService
+        .scheduleStatusChangeNotification(user.toString(), id, oldStatus, status)
+        .catch((error) => {
+          console.error('Error scheduling status change notification:', error);
+        });
+    }
 
     res.status(200).json({ message: 'Task updated successfully', task: updatedTask });
   } catch (error) {
@@ -217,7 +231,20 @@ export const markAsCompleted = async (req: Request, res: Response) => {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
     }
 
+    // Store old status for notification
+    const oldStatus = task.status;
+
     const complete = await completeTask(id);
+
+    // Send notification if status changed to completed
+    if (oldStatus !== 'completed') {
+      // Schedule notification asynchronously (don't wait for it)
+      notificationSchedulerService
+        .scheduleStatusChangeNotification(user.toString(), id, oldStatus, 'completed')
+        .catch((error) => {
+          console.error('Error scheduling status change notification:', error);
+        });
+    }
 
     res.status(200).json({ message: 'Task marked as completed successfully', task: complete });
   } catch (error) {
@@ -247,7 +274,20 @@ export const markAsInProgress = async (req: Request, res: Response) => {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
     }
 
+    // Store old status for notification
+    const oldStatus = task.status;
+
     const inProgress = await inProgressTask(id);
+
+    // Send notification if status changed to in-progress
+    if (oldStatus !== 'in-progress') {
+      // Schedule notification asynchronously (don't wait for it)
+      notificationSchedulerService
+        .scheduleStatusChangeNotification(user.toString(), id, oldStatus, 'in-progress')
+        .catch((error) => {
+          console.error('Error scheduling status change notification:', error);
+        });
+    }
 
     res.status(200).json({ message: 'Task marked as in progress successfully', task: inProgress });
   } catch (error) {

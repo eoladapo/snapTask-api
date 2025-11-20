@@ -11,13 +11,17 @@ const ITERATIONS = 100000;
 /**
  * Get encryption key from environment variable
  * @returns Buffer containing the encryption key
- * @throws Error if PHONE_ENCRYPTION_KEY is not set
+ * @throws Error if PHONE_ENCRYPTION_KEY is not set or too weak
  */
 function getEncryptionKey(): Buffer {
   const key = process.env.PHONE_ENCRYPTION_KEY;
   
   if (!key) {
     throw new Error('PHONE_ENCRYPTION_KEY environment variable is not set');
+  }
+  
+  if (key.length < 32) {
+    throw new Error('PHONE_ENCRYPTION_KEY must be at least 32 characters for security');
   }
   
   // Derive a key from the environment variable using PBKDF2

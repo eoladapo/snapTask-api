@@ -45,4 +45,20 @@ const taskSchema = new Schema<ITask>(
   }
 );
 
+// Performance indexes
+// Index for efficient querying by user
+taskSchema.index({ user: 1 });
+
+// Compound index for user + status queries (most common filter)
+taskSchema.index({ user: 1, status: 1 });
+
+// Compound index for user + category queries (category filtering)
+taskSchema.index({ user: 1, category: 1 });
+
+// Index for due date queries (notification scheduling)
+taskSchema.index({ dueDate: 1, status: 1 });
+
+// Compound index for notification queries (tasks due soon that aren't completed)
+taskSchema.index({ dueDate: 1, status: 1, user: 1 });
+
 export const Task = model<ITask>('Task', taskSchema);

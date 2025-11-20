@@ -6,8 +6,12 @@
   "scripts": {
     "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
-
+    "start": "node dist/server.js",
+    "job:task-reminders": "ts-node src/jobs/taskReminders.ts",
+    "job:daily-summaries": "ts-node src/jobs/dailySummaries.ts",
+    "job:process-queue": "ts-node src/jobs/processQueue.ts",
+    "verify-deployment": "node scripts/verify-deployment.js",
+    "verify-twilio": "node scripts/verify-twilio-setup.js"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +21,7 @@
     "@types/express": "^5.0.5",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/lodash": "^4.17.20",
+    "@types/node": "^24.10.1",
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
@@ -27,10 +32,14 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "mongoose": "^8.19.3",
-    "typescript-transform-paths": "^3.5.5"
+    "twilio": "^5.10.6",
+    "typescript-transform-paths": "^3.5.5",
+    "xss-clean": "^0.1.4"
   }
 }
