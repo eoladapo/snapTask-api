@@ -2,6 +2,11 @@ import { Request, Response } from 'express';
 import User from '../models/user.model';
 import { Task } from '../models/task.model';
 import { Category } from '../models/category.model';
+import { encrypt, decrypt } from '../utils/encryption';
+import {
+  generateAndStoreCode,
+  validateVerificationCode,
+} from '../services/phoneVerification.service';
 
 // Get user profile
 export const getProfile = async (req: Request, res: Response) => {
@@ -18,7 +23,19 @@ export const getProfile = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.status(200).json({ message: 'Profile fetched successfully', user });
+    // Decrypt phone number if it exists
+    const userObject = user.toObject();
+    if (userObject.phoneNumber) {
+      try {
+        userObject.phoneNumber = decrypt(userObject.phoneNumber);
+      } catch (error) {
+        console.log('Error decrypting phone number', error);
+        // If decryption fails, remove the phone number from response
+        userObject.phoneNumber = undefined;
+      }
+    }
+
+    res.status(200).json({ message: 'Profile fetched successfully', user: userObject });
   } catch (error) {
     console.log('Error fetching profile', error);
     res.status(500).json({ message: 'Internal server error, Error fetching profile' });
@@ -267,5 +284,301 @@ export const getStatistics = async (req: Request, res: Response) => {
   } catch (error) {
     console.log('Error fetching statistics', error);
     res.status(500).json({ message: 'Internal server error, Error fetching statistics' });
+  }
+};
+
+/**
+ * Validate phone number format (E.164)
+ * E.164 format: +[country code][subscriber number]
+ * Example: +14155552671
+ * @param phoneNumber - The phone number to validate
+ * @returns true if valid, false otherwise
+ */
+function isValidE164PhoneNumber(phoneNumber: string): boolean {
+  // E.164 format: + followed by 1-15 digits
+  const e164Regex = /^\+[1-9]\d{1,14}$/;
+  return e164Regex.test(phoneNumber);
+}
+
+// Add or update phone number
+export const updatePhoneNumber = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user;
+    const { phoneNumber } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Validate phone number is provided
+    if (!phoneNumber) {
+      return res.status(400).json({ message: 'Phone number is required' });
+    }
+
+    // Validate E.164 format
+    if (!isValidE164PhoneNumber(phoneNumber)) {
+      return res.status(400).json({
+        message: 'Invalid phone number format. Please use E.164 format (e.g., +14155552671)',
+      });
+    }
+
+    // Find the user
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Encrypt the phone number before saving
+    const encryptedPhone = encrypt(phoneNumber);
+
+    // Check if phone number is being changed
+    const isPhoneChanged = user.phoneNumber !== encryptedPhone;
+
+    // Update phone number and reset verification status if changed
+    user.phoneNumber = encryptedPhone;
+    if (isPhoneChanged) {
+      user.phoneVerified = false;
+    }
+
+    await user.save();
+
+    // Generate and store verification code
+    const verificationCode = await generateAndStoreCode(userId, phoneNumber);
+
+    // TODO: Send verification code via WhatsApp/SMS
+    // For now, we'll return it in the response (only for development)
+    // In production, this should be sent via WhatsApp/SMS service
+    console.log(`Verification code for ${phoneNumber}: ${verificationCode}`);
+
+    res.status(200).json({
+      message: 'Phone number updated successfully. Verification code sent.',
+      phoneNumber: phoneNumber, // Return unencrypted for display
+      phoneVerified: false,
+      // Remove this in production:
+      verificationCode: process.env.NODE_ENV === 'development' ? verificationCode : undefined,
+    });
+  } catch (error) {
+    console.log('Error updating phone number', error);
+    res.status(500).json({
+      message: 'Internal server error, Error updating phone number',
+    });
+  }
+};
+
+// Verify phone number with code
+export const verifyPhoneNumber = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user;
+    const { code } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Validate code is provided
+    if (!code) {
+      return res.status(400).json({ message: 'Verification code is required' });
+    }
+
+    // Find the user
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if user has a phone number
+    if (!user.phoneNumber) {
+      return res.status(400).json({ message: 'No phone number to verify' });
+    }
+
+    // Decrypt the phone number
+    const phoneNumber = decrypt(user.phoneNumber);
+
+    // Validate the verification code
+    const isValid = await validateVerificationCode(userId, phoneNumber, code);
+
+    if (!isValid) {
+      return res.status(400).json({
+        message: 'Invalid or expired verification code',
+      });
+    }
+
+    // Mark phone as verified
+    user.phoneVerified = true;
+    await user.save();
+
+    res.status(200).json({
+      message: 'Phone number verified successfully',
+      phoneNumber: phoneNumber,
+      phoneVerified: true,
+    });
+  } catch (error) {
+    console.log('Error verifying phone number', error);
+    res.status(500).json({
+      message: 'Internal server error, Error verifying phone number',
+    });
+  }
+};
+
+/**
+ * Validate time format (HH:MM)
+ * @param time - The time string to validate
+ * @returns true if valid, false otherwise
+ */
+function isValidTimeFormat(time: string): boolean {
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  return timeRegex.test(time);
+}
+
+// Get notification preferences
+export const getNotificationPreferences = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const user = await User.findById(userId).select('notificationPreferences');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({
+      message: 'Notification preferences fetched successfully',
+      notificationPreferences: user.notificationPreferences,
+    });
+  } catch (error) {
+    console.log('Error fetching notification preferences', error);
+    res.status(500).json({
+      message: 'Internal server error, Error fetching notification preferences',
+    });
+  }
+};
+
+// Update notification preferences
+export const updateNotificationPreferences = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user;
+    const {
+      whatsappEnabled,
+      taskReminders,
+      statusUpdates,
+      dailySummary,
+      quietHoursStart,
+      quietHoursEnd,
+    } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Find the user
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Validate boolean values if provided
+    if (whatsappEnabled !== undefined && typeof whatsappEnabled !== 'boolean') {
+      return res.status(400).json({
+        message: 'whatsappEnabled must be a boolean value',
+      });
+    }
+
+    if (taskReminders !== undefined && typeof taskReminders !== 'boolean') {
+      return res.status(400).json({
+        message: 'taskReminders must be a boolean value',
+      });
+    }
+
+    if (statusUpdates !== undefined && typeof statusUpdates !== 'boolean') {
+      return res.status(400).json({
+        message: 'statusUpdates must be a boolean value',
+      });
+    }
+
+    if (dailySummary !== undefined && typeof dailySummary !== 'boolean') {
+      return res.status(400).json({
+        message: 'dailySummary must be a boolean value',
+      });
+    }
+
+    // Validate quiet hours format if provided
+    if (quietHoursStart !== undefined && quietHoursStart !== null) {
+      if (typeof quietHoursStart !== 'string' || !isValidTimeFormat(quietHoursStart)) {
+        return res.status(400).json({
+          message: 'quietHoursStart must be in HH:MM format (e.g., 22:00)',
+        });
+      }
+    }
+
+    if (quietHoursEnd !== undefined && quietHoursEnd !== null) {
+      if (typeof quietHoursEnd !== 'string' || !isValidTimeFormat(quietHoursEnd)) {
+        return res.status(400).json({
+          message: 'quietHoursEnd must be in HH:MM format (e.g., 08:00)',
+        });
+      }
+    }
+
+    // Validate that both quiet hours are provided together or both are null
+    const hasQuietHoursStart = quietHoursStart !== undefined && quietHoursStart !== null;
+    const hasQuietHoursEnd = quietHoursEnd !== undefined && quietHoursEnd !== null;
+
+    if (hasQuietHoursStart !== hasQuietHoursEnd) {
+      return res.status(400).json({
+        message: 'Both quietHoursStart and quietHoursEnd must be provided together or both must be null',
+      });
+    }
+
+    // Update notification preferences
+    if (!user.notificationPreferences) {
+      user.notificationPreferences = {
+        whatsappEnabled: false,
+        taskReminders: true,
+        statusUpdates: true,
+        dailySummary: false,
+      };
+    }
+
+    if (whatsappEnabled !== undefined) {
+      user.notificationPreferences.whatsappEnabled = whatsappEnabled;
+    }
+
+    if (taskReminders !== undefined) {
+      user.notificationPreferences.taskReminders = taskReminders;
+    }
+
+    if (statusUpdates !== undefined) {
+      user.notificationPreferences.statusUpdates = statusUpdates;
+    }
+
+    if (dailySummary !== undefined) {
+      user.notificationPreferences.dailySummary = dailySummary;
+    }
+
+    if (quietHoursStart !== undefined) {
+      user.notificationPreferences.quietHoursStart = quietHoursStart;
+    }
+
+    if (quietHoursEnd !== undefined) {
+      user.notificationPreferences.quietHoursEnd = quietHoursEnd;
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      message: 'Notification preferences updated successfully',
+      notificationPreferences: user.notificationPreferences,
+    });
+  } catch (error) {
+    console.log('Error updating notification preferences', error);
+    res.status(500).json({
+      message: 'Internal server error, Error updating notification preferences',
+    });
   }
 };

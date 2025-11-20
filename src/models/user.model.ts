@@ -9,6 +9,24 @@ const userSchema = new Schema<IUser>(
     password: { type: String, required: true },
     bio: { type: String },
     profilePicture: { type: String },
+    phoneNumber: { type: String },
+    phoneVerified: { type: Boolean, default: false },
+    notificationPreferences: {
+      type: {
+        whatsappEnabled: { type: Boolean, default: false },
+        taskReminders: { type: Boolean, default: true },
+        statusUpdates: { type: Boolean, default: true },
+        dailySummary: { type: Boolean, default: false },
+        quietHoursStart: { type: String },
+        quietHoursEnd: { type: String },
+      },
+      default: {
+        whatsappEnabled: false,
+        taskReminders: true,
+        statusUpdates: true,
+        dailySummary: false,
+      },
+    },
   },
   {
     timestamps: true,
