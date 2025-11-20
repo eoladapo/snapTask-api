@@ -3,28 +3,30 @@ import mongoose from 'mongoose';
 
 /**
  * Create a new category for a user
- * @param categoryData - Category data including name, color, and user
- * @returns Created category document
  */
-export const createCategory = async (categoryData: Partial<ICategory>): Promise<ICategory> => {
-  const category = await Category.create(categoryData);
+export const createCategory = async (
+  userId: string,
+  name: string,
+  color: string
+): Promise<ICategory> => {
+  const category = await Category.create({
+    name,
+    color,
+    user: userId,
+  });
   return category;
 };
 
 /**
  * Get all categories for a specific user
- * @param userId - User ID to filter categories
- * @returns Array of categories belonging to the user
  */
 export const getAllCategories = async (userId: string): Promise<ICategory[]> => {
-  const categories = await Category.find({ user: userId }).sort({ createdAt: -1 });
+  const categories = await Category.find({ user: userId }).sort({ createdAt: 1 });
   return categories;
 };
 
 /**
  * Get a single category by ID
- * @param categoryId - Category ID
- * @returns Category document or null if not found
  */
 export const getCategoryById = async (categoryId: string): Promise<ICategory | null> => {
   if (!mongoose.Types.ObjectId.isValid(categoryId)) {
@@ -36,34 +38,38 @@ export const getCategoryById = async (categoryId: string): Promise<ICategory | n
 
 /**
  * Update a category
- * @param categoryId - Category ID to update
- * @param updateData - Data to update (name and/or color)
- * @returns Updated category document or null if not found
  */
 export const updateCategory = async (
   categoryId: string,
-  updateData: Partial<Pick<ICategory, 'name' | 'color'>>
+  updates: { name?: string; color?: string }
 ): Promise<ICategory | null> => {
-  if (!mongoose.Types.ObjectId.isValid(categoryId)) {
-    return null;
-  }
-  const category = await Category.findByIdAndUpdate(
-    categoryId,
-    updateData,
-    { new: true, runValidators: true }
-  );
+  const category = await Category.findByIdAndUpdate(categoryId, updates, {
+    new: true,
+    runValidators: true,
+  });
   return category;
 };
 
 /**
  * Delete a category
- * @param categoryId - Category ID to delete
- * @returns Deleted category document or null if not found
  */
 export const deleteCategory = async (categoryId: string): Promise<ICategory | null> => {
-  if (!mongoose.Types.ObjectId.isValid(categoryId)) {
-    return null;
-  }
   const category = await Category.findByIdAndDelete(categoryId);
   return category;
+};
+
+/**
+ * Check if a category name already exists for a user
+ */
+export const categoryNameExists = async (userId: string, name: string): Promise<boolean> => {
+  const category = await Category.findOne({ user: userId, name });
+  return !!category;
+};
+
+/**
+ * Get category count for a user
+ */
+export const getCategoryCount = async (userId: string): Promise<number> => {
+  const count = await Category.countDocuments({ user: userId });
+  return count;
 };

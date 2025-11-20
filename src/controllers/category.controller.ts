@@ -31,13 +31,7 @@ export const create = async (req: Request, res: Response) => {
     }
 
     // Create category
-    const categoryData = {
-      name: name.trim(),
-      color: color || '#6366f1',
-      user: user,
-    };
-
-    const category = await createCategory(categoryData);
+    const category = await createCategory(user, name.trim(), color || '#6366f1');
 
     res.status(201).json({
       message: 'Category created successfully',
