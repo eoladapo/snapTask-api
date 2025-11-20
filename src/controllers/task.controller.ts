@@ -11,6 +11,11 @@ import {
 } from '../services/task.service';
 import { Request, Response } from 'express';
 
+// Helper function to extract user ID from task.user (handles both populated and non-populated)
+const getTaskUserId = (taskUser: any): string => {
+  return typeof taskUser === 'object' && taskUser._id ? taskUser._id.toString() : taskUser.toString();
+};
+
 export const createTask = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
@@ -64,7 +69,7 @@ export const getTaskById = async (req: Request, res: Response) => {
     }
 
     // Verify task belongs to the user
-    if (task.user.toString() !== user.toString()) {
+    if (getTaskUserId(task.user) !== user.toString()) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
     }
 
@@ -97,7 +102,7 @@ export const update = async (req: Request, res: Response) => {
     }
 
     // Verify task belongs to the user
-    if (task.user.toString() !== user.toString()) {
+    if (getTaskUserId(task.user) !== user.toString()) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
     }
 
@@ -132,7 +137,7 @@ export const deleteTask = async (req: Request, res: Response) => {
     }
 
     // Verify task belongs to the user
-    if (task.user.toString() !== user.toString()) {
+    if (getTaskUserId(task.user) !== user.toString()) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
     }
 
@@ -162,7 +167,7 @@ export const markAsCompleted = async (req: Request, res: Response) => {
     }
 
     // Verify task belongs to the user
-    if (task.user.toString() !== user.toString()) {
+    if (getTaskUserId(task.user) !== user.toString()) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
     }
 
@@ -192,7 +197,7 @@ export const markAsInProgress = async (req: Request, res: Response) => {
     }
 
     // Verify task belongs to the user
-    if (task.user.toString() !== user.toString()) {
+    if (getTaskUserId(task.user) !== user.toString()) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
     }
 
@@ -222,7 +227,7 @@ export const markAsPending = async (req: Request, res: Response) => {
     }
 
     // Verify task belongs to the user
-    if (task.user.toString() !== user.toString()) {
+    if (getTaskUserId(task.user) !== user.toString()) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this task' });
     }
 
