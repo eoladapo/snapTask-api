@@ -346,17 +346,28 @@ export const updatePhoneNumber = async (req: Request, res: Response) => {
     // Generate and store verification code
     const verificationCode = await generateAndStoreCode(userId, phoneNumber);
 
-    // TODO: Send verification code via WhatsApp/SMS
-    // For now, we'll return it in the response (only for development)
-    // In production, this should be sent via WhatsApp/SMS service
-    console.log(`Verification code for ${phoneNumber}: ${verificationCode}`);
+    // Send verification code via WhatsApp
+    const { whatsappService } = await import('../services/whatsapp.service');
+    const sent = await whatsappService.sendVerificationCode(phoneNumber, verificationCode);
+
+    if (!sent) {
+      console.warn(`Failed to send verification code to ${phoneNumber}. Code: ${verificationCode}`);
+      // Still return success but log the failure
+      // In development, return the code in response
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Verification code for ${phoneNumber}: ${verificationCode}`);
+      }
+    }
 
     res.status(200).json({
-      message: 'Phone number updated successfully. Verification code sent.',
+      message: sent
+        ? 'Phone number updated successfully. Verification code sent via WhatsApp.'
+        : 'Phone number updated. Please check console for verification code (WhatsApp service unavailable).',
       phoneNumber: phoneNumber, // Return unencrypted for display
       phoneVerified: false,
-      // Remove this in production:
-      verificationCode: process.env.NODE_ENV === 'development' ? verificationCode : undefined,
+      // Only return code in development if WhatsApp failed
+      verificationCode:
+        process.env.NODE_ENV === 'development' && !sent ? verificationCode : undefined,
     });
   } catch (error) {
     console.log('Error updating phone number', error);
