@@ -90,6 +90,7 @@ export async function validateVerificationCode(
   }
 
   // Check if code has expired
+  // Ask Has the code already expired? 
   const now = new Date();
   if (verificationRecord.expiresAt < now) {
     // Delete expired code

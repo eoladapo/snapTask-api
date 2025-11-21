@@ -1,0 +1,107 @@
+name: Scheduled Cron Jobs
+
+# This workflow triggers scheduled jobs for SnapTask
+# FREE alternative to Render cron jobs ($7/month each)
+# 
+# Setup:
+# 1. Add CRON_SECRET to GitHub repository secrets
+# 2. Add BACKEND_URL to GitHub repository secrets (e.g., https://your-backend.onrender.com)
+# 3. Enable GitHub Actions in repository settings
+
+on:
+  schedule:
+    # Task reminders - every hour
+    - cron: '0 * * * *'
+    # Daily summaries - 8 AM UTC
+    - cron: '0 8 * * *'
+    # Process queue - every 5 minutes
+    - cron: '*/5 * * * *'
+  
+  # Allow manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Which job to run'
+        required: true
+        type: choice
+        options:
+          - task-reminders
+          - daily-summaries
+          - process-queue
+          - all
+
+jobs:
+  # Task Reminders Job (runs every hour)
+  task-reminders:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 * * * *' || github.event.inputs.job == 'task-reminders' || github.event.inputs.job == 'all'
+    steps:
+      - name: Trigger Task Reminders
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            ${{ secrets.BACKEND_URL }}/api/cron/task-reminders \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json")
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          
+          echo "Response: $body"
+          echo "HTTP Code: $http_code"
+          
+          if [ "$http_code" != "200" ]; then
+            echo "Error: Job failed with HTTP code $http_code"
+            exit 1
+          fi
+          
+          echo "✅ Task reminders job completed successfully"
+
+  # Daily Summaries Job (runs at 8 AM UTC)
+  daily-summaries:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 8 * * *' || github.event.inputs.job == 'daily-summaries' || github.event.inputs.job == 'all'
+    steps:
+      - name: Trigger Daily Summaries
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            ${{ secrets.BACKEND_URL }}/api/cron/daily-summaries \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json")
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          
+          echo "Response: $body"
+          echo "HTTP Code: $http_code"
+          
+          if [ "$http_code" != "200" ]; then
+            echo "Error: Job failed with HTTP code $http_code"
+            exit 1
+          fi
+          
+          echo "✅ Daily summaries job completed successfully"
+
+  # Process Queue Job (runs every 5 minutes)
+  process-queue:
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '*/5 * * * *' || github.event.inputs.job == 'process-queue' || github.event.inputs.job == 'all'
+    steps:
+      - name: Trigger Process Queue
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            ${{ secrets.BACKEND_URL }}/api/cron/process-queue \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json")
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          
+          echo "Response: $body"
+          echo "HTTP Code: $http_code"
+          
+          if [ "$http_code" != "200" ]; then
+            echo "Error: Job failed with HTTP code $http_code"
+            exit 1
+          fi
+          
+          echo "✅ Process queue job completed successfully"
