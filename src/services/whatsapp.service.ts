@@ -107,8 +107,14 @@ class WhatsAppService {
     } catch (error: any) {
       console.error(`WhatsApp message failed (attempt ${retryCount + 1}):`, error.message);
 
-      // Retry logic with exponential backoff
-      if (retryCount < MAX_RETRY_ATTEMPTS - 1) {
+      // Check for Twilio trial account error
+      if (error.code === 21608 || error.message?.includes('not a valid')) {
+        console.error('⚠️  TWILIO TRIAL ACCOUNT: This phone number is not verified. Add it to your Twilio verified numbers or upgrade to a paid account.');
+        throw new Error('This phone number cannot receive messages on a Twilio trial account. Please verify the number in your Twilio dashboard or upgrade to a paid account.');
+      }
+
+      // Retry logic with exponential backoff (skip retry for trial account errors)
+      if (retryCount < MAX_RETRY_ATTEMPTS - 1 && error.code !== 21608) {
         const delay = RETRY_DELAYS[retryCount] || RETRY_DELAYS[RETRY_DELAYS.length - 1];
         console.log(`Retrying in ${delay}ms...`);
 
@@ -323,13 +329,21 @@ class WhatsAppService {
 
     const message = `👋 *Hello from SnapTask!*\n\nThis is a test notification to confirm your WhatsApp integration is working correctly.\n\nYou're all set to receive task reminders and updates! 🎉`;
 
-    const success = await this.sendMessage(phoneNumber, message);
+    try {
+      const success = await this.sendMessage(phoneNumber, message);
 
-    if (!success) {
-      throw new Error('Failed to send test notification');
+      if (!success) {
+        throw new Error('Failed to send test notification. Please check your Twilio configuration.');
+      }
+
+      return true;
+    } catch (error: any) {
+      // Re-throw with user-friendly message
+      if (error.message.includes('trial account')) {
+        throw error; // Already has a good message
+      }
+      throw new Error('Failed to send test notification: ' + error.message);
     }
-
-    return true;
   }
 }
 
