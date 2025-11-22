@@ -7,6 +7,7 @@ export interface ITask {
   user: Schema.Types.ObjectId;
   category?: Schema.Types.ObjectId;
   dueDate?: Date;
+  taskDate?: Date; // Date this task belongs to (for daily organization)
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -39,6 +40,14 @@ const taskSchema = new Schema<ITask>(
     dueDate: {
       type: Date,
     },
+    taskDate: {
+      type: Date,
+      default: () => {
+        // Set to start of current day in user's timezone
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      },
+    },
   },
   {
     timestamps: true,
@@ -60,5 +69,8 @@ taskSchema.index({ dueDate: 1, status: 1 });
 
 // Compound index for notification queries (tasks due soon that aren't completed)
 taskSchema.index({ dueDate: 1, status: 1, user: 1 });
+
+// Index for taskDate queries (daily task organization)
+taskSchema.index({ user: 1, taskDate: 1 });
 
 export const Task = model<ITask>('Task', taskSchema);

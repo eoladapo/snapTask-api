@@ -93,14 +93,14 @@ const globalLimiter = rateLimit({
 
 
 app.use(cors({
-  origin: ["https://snaptask-geo.onrender.com"],
+  origin: ["https://snaptask-geo.onrender.com", "http://localhost:5173"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization", "x-retry-count"]
 }));
 
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin",  "https://snaptask-geo.onrender.com");
+  res.header("Access-Control-Allow-Origin",  "http://localhost:5173");
   res.header("Access-Control-Allow-Credentials", "true");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-retry-count");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE");
