@@ -21,7 +21,7 @@ const getTaskUserId = (taskUser: any): string => {
 export const createTask = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    const { title, description, status, category } = req.body;
+    const { title, description, status, category, taskDate } = req.body;
 
     // Validate category ownership if category is provided
     if (category) {
@@ -37,7 +37,7 @@ export const createTask = async (req: Request, res: Response) => {
       }
     }
 
-    const newTask = await create({ title, description, status, category, user });
+    const newTask = await create({ title, description, status, category, taskDate, user });
 
     res.status(201).json({ message: 'Task created successfully', task: newTask });
   } catch (error) {
@@ -118,7 +118,7 @@ export const update = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     const { id } = req.params;
-    const { title, description, status, category } = req.body as ITask;
+    const { title, description, status, category, taskDate } = req.body as ITask;
 
     console.log('Update task request:', { id, title, description, status, category, user: user?._id });
 
@@ -158,7 +158,7 @@ export const update = async (req: Request, res: Response) => {
     // Store old status for notification
     const oldStatus = task.status;
 
-    const updatedTask = await updateTask(id, { title, description, status, category } as ITask);
+    const updatedTask = await updateTask(id, { title, description, status, category, taskDate } as ITask);
 
     console.log('Update task - Updated task:', updatedTask);
 
