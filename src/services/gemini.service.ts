@@ -23,7 +23,7 @@ export interface ConversationMessage {
 const functionDeclarations = [
   {
     name: 'createTask',
-    description: 'Creates a new task for the user',
+    description: 'Creates a new task for the user. Can create tasks for today, tomorrow, or any specific date.',
     parameters: {
       type: 'OBJECT' as const,
       properties: {
@@ -39,6 +39,10 @@ const functionDeclarations = [
           type: 'STRING' as const,
           description: "Initial status of the task (optional, defaults to 'pending')",
           enum: ['pending', 'in-progress', 'completed'],
+        },
+        taskDate: {
+          type: 'STRING' as const,
+          description: 'The date this task belongs to in ISO format (YYYY-MM-DD). Defaults to today if not specified. Use this when user mentions "tomorrow", "next week", or a specific date.',
         },
       },
       required: ['title'],
@@ -198,11 +202,17 @@ You have access to five functions to manage tasks and categories:
 
 TASK FUNCTIONS:
 
-1. createTask(title, description?, status?)
+1. createTask(title, description?, status?, taskDate?)
    - Use when: User wants to add, create, or make a new task
-   - Examples: "create a task to buy groceries", "add a new task called meeting prep", "make a task for the project"
+   - Examples: "create a task to buy groceries", "add a new task called meeting prep", "make a task for tomorrow"
    - Required: title (extract from user message)
-   - Optional: description (any additional details), status (defaults to 'pending')
+   - Optional: description (any additional details), status (defaults to 'pending'), taskDate (ISO date string YYYY-MM-DD)
+   - Date handling:
+     * If user says "today" or no date mentioned: omit taskDate (defaults to today)
+     * If user says "tomorrow": calculate tomorrow's date and use YYYY-MM-DD format
+     * If user says "next week", "Monday", etc.: calculate the appropriate date
+     * If user provides specific date: parse and convert to YYYY-MM-DD format
+     * Examples: "create task for tomorrow" → taskDate: "2025-11-23", "add task for next Monday" → calculate date
 
 2. updateTaskStatus(taskIdentifier, status)
    - Use when: User wants to change task status, mark as complete/in-progress/pending, or start/finish a task
@@ -249,6 +259,9 @@ TASK CREATE patterns:
 - "new task: [title]"
 - "remind me to [title]"
 - "I need to [title]"
+- "create task for [tomorrow/next week/Monday/date] [title]"
+- "add [title] to [tomorrow/next week/date]"
+- "[title] for [tomorrow/next week/date]"
 
 STATUS UPDATE patterns:
 - "mark/set [task] as [status]"
@@ -278,6 +291,14 @@ MULTI-STEP patterns:
 - "create a task called [title] and mark it as in progress" → call createTask with status='in-progress'
 - "complete [task] and create a new one for [title]" → call updateTaskStatus then createTask
 - "create a category called [name] with color [color]" → call createCategory with name and color
+- "create task for tomorrow called [title]" → call createTask with taskDate set to tomorrow's date
+
+DATE CALCULATION:
+- Always calculate dates relative to today's date
+- Today is ${new Date().toISOString().split('T')[0]}
+- Tomorrow is ${new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+- Use ISO format YYYY-MM-DD for all dates
+- For "next Monday", "next week", etc., calculate the actual date
 
 === HANDLING AMBIGUOUS REQUESTS ===
 
@@ -422,6 +443,7 @@ const executeFunctionCalls = async (
             title: args.title,
             description: args.description,
             status: args.status,
+            taskDate: args.taskDate,
           });
           break;
 

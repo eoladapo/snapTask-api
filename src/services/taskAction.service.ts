@@ -40,6 +40,7 @@ export interface CreateTaskParams {
   title: string;
   description?: string;
   status?: 'pending' | 'in-progress' | 'completed';
+  taskDate?: string; // ISO date string (YYYY-MM-DD)
 }
 
 export interface UpdateStatusParams {
@@ -268,6 +269,32 @@ class TaskActionService {
         };
       }
 
+      // Parse and validate taskDate if provided
+      let taskDate: Date | undefined;
+      if (params.taskDate) {
+        try {
+          taskDate = new Date(params.taskDate);
+          // Validate it's a valid date
+          if (isNaN(taskDate.getTime())) {
+            return {
+              success: false,
+              message: 'Invalid date format. Please provide a valid date.',
+              error: TaskActionErrorType.VALIDATION_ERROR,
+              errorDetails: `Invalid taskDate: ${params.taskDate}`,
+              retryable: false,
+            };
+          }
+        } catch (error) {
+          return {
+            success: false,
+            message: 'Invalid date format. Please provide a valid date.',
+            error: TaskActionErrorType.VALIDATION_ERROR,
+            errorDetails: `Failed to parse taskDate: ${params.taskDate}`,
+            retryable: false,
+          };
+        }
+      }
+
       // Create the task with database error handling
       let newTask;
       try {
@@ -276,6 +303,7 @@ class TaskActionService {
           description: params.description?.trim() || '',
           status: params.status || 'pending',
           user: userId,
+          taskDate: taskDate,
         });
       } catch (dbError: any) {
         console.error('Database error creating task:', dbError);
