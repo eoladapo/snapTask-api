@@ -15,9 +15,12 @@ export const getAllTasks = async (userId: string, categoryId?: string, taskDate?
   
   if (taskDate) {
     // Filter by taskDate - match the exact date (start of day to end of day)
-    const date = new Date(taskDate);
-    const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-    const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+    // Parse date string as YYYY-MM-DD in UTC to avoid timezone issues
+    const [year, month, day] = taskDate.split('-').map(Number);
+    
+    // Create date range in UTC
+    const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
     
     // Match tasks where:
     // 1. taskDate exists and matches the requested date, OR

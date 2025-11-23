@@ -75,10 +75,12 @@ export const getAll = async (req: Request, res: Response) => {
     }
 
     const tasks = await getAllTasks(user, categoryId, taskDate);
-    if (!tasks || tasks.length === 0) {
-      return res.status(404).json({ message: 'No tasks found' });
-    }
-    res.status(200).json({ message: 'Tasks fetched successfully', tasks });
+    // Return empty array instead of 404 when no tasks found
+    // This allows the frontend to show "No tasks for this day" message
+    res.status(200).json({ 
+      message: tasks.length > 0 ? 'Tasks fetched successfully' : 'No tasks found for this date', 
+      tasks: tasks || [] 
+    });
   } catch (error) {
     res
       .status(500)
