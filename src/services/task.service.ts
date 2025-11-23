@@ -19,10 +19,24 @@ export const getAllTasks = async (userId: string, categoryId?: string, taskDate?
     const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
     const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
     
-    query.taskDate = {
-      $gte: startOfDay,
-      $lte: endOfDay,
-    };
+    // Match tasks where:
+    // 1. taskDate exists and matches the requested date, OR
+    // 2. taskDate doesn't exist but createdAt matches the requested date (for backward compatibility)
+    query.$or = [
+      {
+        taskDate: {
+          $gte: startOfDay,
+          $lte: endOfDay,
+        },
+      },
+      {
+        taskDate: { $exists: false },
+        createdAt: {
+          $gte: startOfDay,
+          $lte: endOfDay,
+        },
+      },
+    ];
   }
   
   const result = await Task.find(query).populate('user').populate('category');

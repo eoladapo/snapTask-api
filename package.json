@@ -10,6 +10,7 @@
     "job:task-reminders": "ts-node src/jobs/taskReminders.ts",
     "job:daily-summaries": "ts-node src/jobs/dailySummaries.ts",
     "job:process-queue": "ts-node src/jobs/processQueue.ts",
+    "migrate:task-dates": "ts-node scripts/migrate-task-dates.ts",
     "verify-deployment": "node scripts/verify-deployment.js",
     "verify-twilio": "node scripts/verify-twilio-setup.js"
   },
