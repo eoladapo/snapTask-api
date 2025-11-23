@@ -108,27 +108,34 @@ export const getStatistics = async (req: Request, res: Response) => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfYear = new Date(now.getFullYear(), 0, 1);
 
+    // Helper function to get task date (prefer taskDate, fallback to createdAt)
+    const getTaskDate = (task: any): Date | null => {
+      if (task.taskDate) return new Date(task.taskDate);
+      if (task.createdAt) return new Date(task.createdAt);
+      return null;
+    };
+
     // Weekly statistics
     const weeklyTasks = tasks.filter((t) => {
-      if (!t.createdAt) return false;
-      const createdAt = new Date(t.createdAt);
-      return createdAt >= startOfWeek;
+      const taskDate = getTaskDate(t);
+      if (!taskDate) return false;
+      return taskDate >= startOfWeek;
     });
     const weeklyCompleted = weeklyTasks.filter((t) => t.status === 'completed').length;
 
     // Monthly statistics
     const monthlyTasks = tasks.filter((t) => {
-      if (!t.createdAt) return false;
-      const createdAt = new Date(t.createdAt);
-      return createdAt >= startOfMonth;
+      const taskDate = getTaskDate(t);
+      if (!taskDate) return false;
+      return taskDate >= startOfMonth;
     });
     const monthlyCompleted = monthlyTasks.filter((t) => t.status === 'completed').length;
 
     // Yearly statistics
     const yearlyTasks = tasks.filter((t) => {
-      if (!t.createdAt) return false;
-      const createdAt = new Date(t.createdAt);
-      return createdAt >= startOfYear;
+      const taskDate = getTaskDate(t);
+      if (!taskDate) return false;
+      return taskDate >= startOfYear;
     });
     const yearlyCompleted = yearlyTasks.filter((t) => t.status === 'completed').length;
 
@@ -146,9 +153,9 @@ export const getStatistics = async (req: Request, res: Response) => {
       nextDate.setDate(date.getDate() + 1);
 
       const dayTasks = tasks.filter((t) => {
-        if (!t.createdAt) return false;
-        const createdAt = new Date(t.createdAt);
-        return createdAt >= date && createdAt < nextDate;
+        const taskDate = getTaskDate(t);
+        if (!taskDate) return false;
+        return taskDate >= date && taskDate < nextDate;
       });
 
       const dayCompleted = dayTasks.filter((t) => t.status === 'completed').length;
@@ -171,9 +178,9 @@ export const getStatistics = async (req: Request, res: Response) => {
       weekEnd.setDate(weekStart.getDate() + 7);
 
       const weekTasks = tasks.filter((t) => {
-        if (!t.createdAt) return false;
-        const createdAt = new Date(t.createdAt);
-        return createdAt >= weekStart && createdAt < weekEnd;
+        const taskDate = getTaskDate(t);
+        if (!taskDate) return false;
+        return taskDate >= weekStart && taskDate < weekEnd;
       });
 
       const weekCompleted = weekTasks.filter((t) => t.status === 'completed').length;
@@ -194,9 +201,9 @@ export const getStatistics = async (req: Request, res: Response) => {
       const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
 
       const monthTasks = tasks.filter((t) => {
-        if (!t.createdAt) return false;
-        const createdAt = new Date(t.createdAt);
-        return createdAt >= monthStart && createdAt <= monthEnd;
+        const taskDate = getTaskDate(t);
+        if (!taskDate) return false;
+        return taskDate >= monthStart && taskDate <= monthEnd;
       });
 
       const monthCompleted = monthTasks.filter((t) => t.status === 'completed').length;
