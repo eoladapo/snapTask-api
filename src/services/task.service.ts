@@ -5,12 +5,24 @@ export const create = async (task: ITask) => {
   return result;
 };
 
-export const getAllTasks = async (userId: string, categoryId?: string) => {
+export const getAllTasks = async (userId: string, categoryId?: string, taskDate?: string) => {
   const query: any = { user: userId };
   
   if (categoryId !== undefined) {
     // Support filtering by category, including null for uncategorized tasks
     query.category = categoryId === 'null' ? null : categoryId;
+  }
+  
+  if (taskDate) {
+    // Filter by taskDate - match the exact date (start of day to end of day)
+    const date = new Date(taskDate);
+    const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+    const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+    
+    query.taskDate = {
+      $gte: startOfDay,
+      $lte: endOfDay,
+    };
   }
   
   const result = await Task.find(query).populate('user').populate('category');

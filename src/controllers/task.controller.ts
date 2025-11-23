@@ -56,8 +56,9 @@ export const getAll = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    // Get category filter from query parameter
+    // Get category and date filters from query parameters
     const categoryId = req.query.category as string | undefined;
+    const taskDate = req.query.date as string | undefined;
 
     // Validate category ownership if category filter is provided
     if (categoryId && categoryId !== 'null') {
@@ -73,7 +74,7 @@ export const getAll = async (req: Request, res: Response) => {
       }
     }
 
-    const tasks = await getAllTasks(user, categoryId);
+    const tasks = await getAllTasks(user, categoryId, taskDate);
     if (!tasks || tasks.length === 0) {
       return res.status(404).json({ message: 'No tasks found' });
     }
