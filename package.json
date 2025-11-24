@@ -11,6 +11,7 @@
     "job:daily-summaries": "ts-node src/jobs/dailySummaries.ts",
     "job:process-queue": "ts-node src/jobs/processQueue.ts",
     "migrate:task-dates": "ts-node scripts/migrate-task-dates.ts",
+    "fix:task-dates": "node scripts/fix-task-dates.js",
     "verify-deployment": "node scripts/verify-deployment.js",
     "verify-twilio": "node scripts/verify-twilio-setup.js"
   },
